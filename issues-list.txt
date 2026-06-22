@@ -7,6 +7,14 @@ If you want something added, please send a message to the mailing list.
 
 1.  Introduction  
 
+Rohan: I do not support the new name “CDN”, which was submitted days before the WGLC. The name “Extended Diagnostic Notation” has been used by the community at least since October 2015 (Appendix G of draft-greevenbosch-appsawg-cbor-cddl-07). There is nothing especially Concise about the notation (and ironically its specification is extremely verbose). I also do not support CEDN. [EDN: not CDN or CEDN]
+
+Anders: I don't have an issue with EDN.  It is sort of "established" already.  CDN collides a bit too much with another acronym in my taste. I would consider CTN, CBOR Textual Notation because this is how it is used. [CTN]
+
+Lawrence: +1 to "I would consider CTN, CBOR Textual Notation because this is how it is used." [CTN]
+
+Vadim: First, name was not changed even to CEDN. Whatever it means, but leave "EDN" substring for mental compatibility. [on -26 EDN draft diff]
+
 1.1.  Structure of This Document  
 
 1.2.  Terminology and Conventions 
@@ -21,11 +29,22 @@ If you want something added, please send a message to the mailing list.
 
 1.3.4.  Evolution 
 
+Rohan: I completely disagree with the sentiment in Section 1.3.4. Our CI and document generation use cases require use of a stable set of EDN extensions, or use of pragma/processing instructions. [Please remove Section 1.3.4 of EDN -26]
+
+Laurence: I find section 1.3.4 pretty difficult to understand. I don’t really know what it is trying to say. What is the evolution strategy? State that clearly first, then maybe talk about the past. [Comment on draft-ietf-cbor-edn-literals-26 -- Section 1.3.4 on evolution]
+
+
 1.3.5.  Character Repertoire of Source 
 
 2.  Concise Diagnostic Notation (CDN)
 
 2.1.  Application-Oriented Extension Literals
+
+Rohan: I believe that the simplest mental model for extensions in CBOR is that they produce CBOR bytes and a type. This allows a unification of app-extensions with built-in features. It also makes it reasonable to remove extensibility of encoding indicators. [Proposal in EDN: App-extensions produce CBOR bytes]
+
+Rohan: Section 2.1 implies / describes how b64`foo` is the same as b64<<"foo">> or b64<<`foo`>>. This is wrong. b64'foo # `hi`' is NOT the same as b64<<`foo # `hi``>> (which is illegal syntax).  In other words, you can't take one quoting mechanism of EDN and rewrite its syntax with another type. You could replace an app-extension not using << >> with one using << >> and the SAME string type inside (including the same number of backticks for a rawliteral). You also cannot assume that foo<< >> with a single EDN item is a type that can be expressed inside as foo'' or foo``.  For example foo<< simple(100) >> cannot be expressed any other way, even though it has a single argument. [Faulty Equivalence model of app-extension families in EDN]
+
+Rohan: In the same way that extensions can specify if lowercase or uppercase forms are allowed, they should be able to specify the canonical form of the extension and which quoting mechanisms are allowed (if any). Some forms may not be well suited to the grammar and may cause poor readability and excessive escaping. [EDN Extensions can specify relevant quoting mechanisms]
 
 2.2.  Comments 
 
@@ -33,19 +52,31 @@ If you want something added, please send a message to the mailing list.
 
 2.3.  Encoding Indicators
 
+Rohan: I would like to remove the extensibility of encoding indicators from EDN. The spec would define _, _i, _0, _1, _2, and _3. Any additional indicators would need to be added by an update to EDN. [Remove extensibility of encoding indicators in EDN]
+
+Vadim: Then, encoding indicators issue is still not addressed. Currently, as it is now, different implementers will interpret differently
+and choose different variants from this list as being correct/incorrect. That is not interoperable, but easily solved by adding indicator to literal
+name to be processed by extension handler. [on -26 EDN draft diff]
+
 2.3.1.  Syntax, Semantics, Examples
 
 2.4.  Numbers
 
 2.5.  Strings
 
-2.5.1.  No Special String Concatenation Syntax 
+2.5.1.  No Special String Concatenation Syntax
+
+Rohan: I do not agree with removing explicit string concatenation (using the + character). Using b1<< >> and t1<< >> is a LOT less readable and intuitive than using a +.  The edge cases of concatenation are manageable with two straightforward rules: - The first segment of a concatenated string needs to be the target type - If numeric or _i encoding indicators are included in any of segments, the concatenated string is treated as if the largest of these indicators was selected. [Restore + string concatenation in EDN]
 
 2.5.2.  Double-Quoted String Literals
 
 2.5.3.  Single-Quoted String Literals
 
 2.5.4.  Raw String Literals
+
+Rohan: I propose a fixed number of backticks (between 1 and 8). I propose a fixed number of backticks (between 1 and 8). This would need to be described in the text. Specifically for the absense of doubt I propose only the following change to the ABNF (in the `rawdelim` production): rawdelim        = 1*8BACKTICK BACKTICK        = %x60    ; ` acute accent (backtick) [proposed limit the number of backticks in a rawliteral]
+
+Rohan: I propose simply that backtick-delimited strings MUST NOT have a backtick as the first or last character of the string. If someone wants backticks in their strings they can use another quoting mechanism or string concatenation. [remove special whitespace handling of raw-literals]
 
 2.5.5.  Deprecated: Indefinite-length Encoding Indicators for Strings
 
@@ -79,23 +110,40 @@ If you want something added, please send a message to the mailing list.
 
 3.5.  Creating Indefinite-length Encoded Strings: The "ilbs" and "ilts" Extensions
 
+Rohan: I support replacing the streamstring syntax with the app extensions. I suggest naming the extensions:  i_tstr and i_bstr. [Support: replacing streamstring syntax]
+
 3.6.  Concise Resource Identifiers: The "cri" Extension
 
 3.7.  The "float" Extension
+
+Rohan: I support the addition of float'' (Section 3.7) to allow representation of all legal CBOR in EDN. [Support addition of float'' app-extension in EDN]
 
 4.  Tag-based Representations of CDN Input in Binary CBOR
 
 4.1.  Handling unknown application-extension identifiers 
 
+Rohan: I expressed opposition to converting unknown app extensions and ellipses into tags. (My preferred approach would still be to remove both tag 888 and tag 999.) If we leave stand-in syntax in the draft, I propose that they are only used if explicitly enabled with a pragma/processing instruction at the very beginning of the document, and/or a non-default command line option. [Proposal for stand-in processing in EDN]
+
+Vadim: For Tag 888 and "..." syntax, it is argued by needs of spec writers. However, this is specific task and usually solved by spec writers having their specialized tools. For Tag 999, I've already said this many times. Present changes in draft in Security Considerations still DO NOT address issues of stand-in tags, no matter how you rename it; it is different problem and is most suitable for RFCregsimples document (which will also be needed for cbor-packed). However, there is one specific thing "broken" in -26 in this regard: the "pragma" extension is marked as reserved but not described. [on -26 EDN draft diff]
+
 4.2.  Handling information deliberately elided from a CDN document 
+
+Rohan: I expressed opposition to converting unknown app extensions and ellipses into tags. (My preferred approach would still be to remove both tag 888 and tag 999.) If we leave stand-in syntax in the draft, I propose that they are only used if explicitly enabled with a pragma/processing instruction at the very beginning of the document, and/or a non-default command line option. [Proposal for stand-in processing in EDN]
 
 5.  ABNF Definitions 
 
 5.1.  Overall ABNF Definition for Concise Diagnostic Notation 
 
+Rohan: The top-level of the ABNF lists specific types of items, rather than directly including app-strings, app-sequences and elisions. While the ABNF allows app-prefixes and app-sequences indirectly through the bstr production and ellipses through the string1e production, this obfuscates the types of items they can represent. Ellipses can represent any type of item, not just text. ip'' can be a bstr or an array; dt'' is an integer; the capitalized versions are tagged.
+If application extensions are buried inside the ABNF string definition, developers will assume that they are only for bstrs (like h'' and hash<<>>). Instead app-extensions and ellipsis can be directly incorporated in the grammar of `item`. [Include application extensions and ellipsis directly in top-level `item` ABNF]
+
 5.2.  ABNF Definitions for Application Extension Content 
 
+Rohan: I have worked with ANBF for decades, and have reviewed and rewritten ABNF extensively during my career. This document presents an ABNF for most of the protocol separately from the ABNFs for prefixed strings like h’’, b64’’, ip’’, and dt’’. This requires a 2-pass parser. Most IETF protocols that use ABNF present ABNF that can be parsed as a single pass. Using the 2-pass parser means that implementors usually need to allocate dynamic memory for prefixed-strings in order to parse them later (in case they contain escape sequences). The 2-passes-by-default model has negative performance implications (which are especially relevant in CI workflows) and are more likely to run out of memory. Implementer would be free to use 2-pass parsers, but the default would be single-pass parsers. Note that there would be no change in the ABNF productions needed for ip and dt, and the change for cri is a single line. The only complexity is h and b64. I am happy to contribute a nicer-looking single-pass ABNF. [make 1-pass ABNF the default for MTI features]
+
 5.2.1.  h: ABNF Definition of Hexadecimal representation of a byte string
+
+Rohan: Comments inside of h'' and b64'' are there because we could end up with long sequences, and because there was no support for string concatenation. Implementations can safely use the # end-of-line comment in both h'' and b64''. There are also existing single-slash comments inside h''. However, there is no good reason to introduce support for /* */ block comments, and // end-of-line comments INSIDE h''. [Remove new comment types from inside h'' app-strings]
 
 5.2.2.  b64: ABNF Definition of Base64 representation of a byte string 
 
@@ -137,3 +185,10 @@ If you want something added, please send a message to the mailing list.
 
 Appendix A.  CDN and CDDL
 
+Whole document
+
+Ira: Fine, except for editorial tweaks from Carsten and others in recent weeks. Strongly opposed to removing features or other significant content. [Ira approves of draft-ietf-cbor-edn-literals-26]
+
+Mikolai: I like the general direction of the changes. [CDN -26 on right track]
+
+Orie: I strongly suggest we not add any more features to this draft, limit subsequent revisions to structural or editorial content... No new extensions. [Orie approves of draft-ietf-cbor-edn-literals-26]
