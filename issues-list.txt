@@ -1,9 +1,7 @@
 This document lists the issues that the CBOR WG chairs have seen on the mailing list
 in response to a request for comments on draft-ietf-cbor-edn-literals-26 draft.
 
-The chairs will fill in this list from what they see on the drafts.
-The document in this repo will not accept issues or pull requests.
-If you want something added, please send a message to the mailing list.
+
 
 1.  Introduction  
 
@@ -117,6 +115,8 @@ Rohan: I support replacing the streamstring syntax with the app extensions. I su
 3.7.  The "float" Extension
 
 Rohan: I support the addition of float'' (Section 3.7) to allow representation of all legal CBOR in EDN. [Support addition of float'' app-extension in EDN]
+
+Vadim: The "r" application extension outputs raw CBOR bytes. The purpose of this application extension currently is for writing tests for CBOR implementations and to close a gap in EDN's [IEEE754] binary64 support: Without this (or a similar) extension there is no way to represent NaN values different from the one called out at the end of Section 4.1 of RFC 8949 [STD94]: "(for many applications, the single NaN encoding 0xf97e00 will suffice)". For finite floating point numbers, the decimal or hex floating point representations are preferred. The syntax inside r'' literal is hexadecimal characters, single-quoted and double-quoted strings, comments of /slash/ form, and #major.ai notation from CDDL to produce one or more CBOR initial bytes (extensions to syntax may be added in future to help calculating lengths). Strings in quotes are processed subject to usual EDN escaping rules and concatenated as if they were inside concatenation operation with corresponding h'' strings. [float'' -> r`` | Was: on -26 EDN draft diff]
 
 4.  Tag-based Representations of CDN Input in Binary CBOR
 
